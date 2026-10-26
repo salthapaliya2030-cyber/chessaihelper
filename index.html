@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chess Arena & Openings Trainer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1e;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+        }
+        /* Openings Sidebar Styling */
+        .openings-panel {
+            width: 250px;
+            background-color: #24242d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #33333f;
+            transition: all 0.3s ease;
+        }
+        .openings-panel.hidden {
+            display: none;
+        }
+        .openings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding-right: 5px;
+        }
+        .opening-btn {
+            background-color: #2c3e50;
+            text-align: left;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .opening-btn:hover { background-color: #34495e; }
+        
+        /* Main Board Styling */
+        .board-container {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #board {
+            width: 450px;
+            border: 5px solid #2d2d35;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .toggle-btn {
+            background-color: #16a085;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            width: auto;
+            border-radius: 20px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .toggle-btn:hover { background-color: #1abc9c; }
+
+        /* Right Sidebar & Scoreboard */
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel {
+            background-color: #24242d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #33333f;
+        }
+        h2, h3 { margin-top: 0; color: #f0f0f5; }
+        
+        /* Scoreboard Visual Component */
+        .scoreboard-container {
+            margin: 15px 0;
+        }
+        .eval-bar-bg {
+            background: #333;
+            height: 24px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #555;
+        }
+        .eval-bar-fill {
+            background: #fff;
+            height: 100%;
+            width: 50%; /* Starts perfectly even */
+            transition: width 0.4s ease;
+        }
+        .eval-text {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 5px;
+        }
+
+        .highlight-box {
+            background-color: #1e1e24;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            border-left: 4px solid #4caf50;
+        }
+        #bot-status { border-left-color: #e74c3c; color: #ff6b6b; }
+        #advice-box { border-left-color: #3498db; color: #5dade2; }
+        
+        button {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        #resetBtn { background-color: #c0392b; margin-top: 10px; }
+        #resetBtn:hover { background-color: #d94333; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <!-- LEFT SIDE: Hideable Openings Library -->
+    <div class="openings-panel" id="openingsSidebar">
+        <h3>📖 Opening Playbook</h3>
+        <p style="font-size: 0.8rem; color: #aaa; margin: 0;">Clicking an opening resets the board and forces the initial moves.</p>
+        <div class="openings-list">
+            <button class="opening-btn" onclick="loadOpening('e4 e5 Nf3 Nc6 Bb5')">Ruy Lopez</button>
+            <button class="opening-btn" onclick="loadOpening('e4 c5')">Sicilian Defense</button>
+            <button class="opening-btn" onclick="loadOpening('d4 d5 c4')">Queen's Gambit</button>
+            <button class="opening-btn" onclick="loadOpening('e4 e6')">French Defense</button>
+            <button class="opening-btn" onclick="loadOpening('d4 Nf6 c4 e6 Nf3 b6')">Queen's Indian Defense</button>
+            <button class="opening-btn" onclick="loadOpening('e4 c6')">Caro-Kann Defense</button>
+            <button class="opening-btn" onclick="loadOpening('d4 Nf6 c4 g6 Nc3 Bg7')">King's Indian Defense</button>
+            <button class="opening-btn" onclick="loadOpening('f4')">Bird's Opening</button>
+        </div>
+    </div>
+
+    <!-- CENTER: Main Match Arena -->
+    <div class="board-container">
+        <button class="toggle-btn" id="toggleSidebarBtn">↔ Toggle Openings Menu</button>
+        <div id="board"></div>
+    </div>
+
+    <!-- RIGHT SIDE: Real-Time Scoreboard & AI Panel -->
+    <div class="sidebar">
+        <div class="panel">
+            <h3>📊 Real-Time Scoreboard</h3>
+            <div class="scoreboard-container">
+                <div class="eval-bar-bg">
+                    <div id="evalBar" class="eval-bar-fill"></div>
+                </div>
+                <div id="evalValue" class="eval-text">0.00</div>
+            </div>
+            <div id="bot-status" class="highlight-box">Loading Engine...</div>
+        </div>
+
+        <div class="panel">
+            <h3>💡 AI Cheat Sheet</h3>
+            <div id="advice-box" class="highlight-box">Thinking...</div>
+        </div>
+
+        <div class="panel">
+            <button id="resetBtn">Restart Match</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+<script>
+    const game = new Chess();
+    let board = null;
+    
+    const stockfish = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
+    
+    const botStatusEl = document.getElementById('bot-status');
+    const adviceBoxEl = document.getElementById('advice-box');
+    const evalBar = document.getElementById('evalBar');
+    const evalValue = document.getElementById('evalValue');
+    
+    let isBotThinking = false;
+
+    stockfish.postMessage('uci');
+
+    stockfish.onmessage = function(event) {
+        const line = event.data;
+
+        if (line === 'uciok') {
+            botStatusEl.innerText = "Ready! Make a move.";
+            calculatePositionAnalysis();
+        }
+
+        // Parse Engine Evaluation scores
+        if (line.includes('score cp')) {
+            const parts = line.split(' ');
+            const scoreIndex = parts.indexOf('cp');
+            if (scoreIndex !== -1) {
+                let cp = parseInt(parts[scoreIndex + 1]);
+                // If it's Black's turn to calculate, inverse score for consistency
+                if (game.turn() === 'b') cp = -cp; 
+                updateScoreboard(cp / 100);
+            }
+        } else if (line.includes('score mate')) {
+            const parts = line.split(' ');
+            const mateIndex = parts.indexOf('mate');
+            if (mateIndex !== -1) {
+                const movesToMate = parts[mateIndex + 1];
+                evalValue.innerText = "M" + movesToMate;
+                evalBar.style.width = movesToMate > 0 ? "100%" : "0%";
+            }
+        }
+
+        if (line.startsWith('bestmove')) {
+            const parts = line.split(' ');
+            const move = parts;
+
+            if (isBotThinking) {
+                game.move({
+                    from: move.substring(0, 2),
+                    to: move.substring(2, 4),
+                    promotion: move.length > 4 ? move.substring(4, 5) : undefined
+                });
+                board.position(game.fen());
+                isBotThinking = false;
+                botStatusEl.innerText = "Your Turn";
+                calculatePositionAnalysis();
+            } else {
+                adviceBoxEl.innerText = move.toUpperCase();
+            }
+        }
+    };
+
+    // Calculate both Score and Player Advice simultaneously
+    function calculatePositionAnalysis() {
+        if (game.game_over()) {
+            botStatusEl.innerText = "Game Over!";
+            return;
+        }
+        isBotThinking = false;
+        stockfish.postMessage('position fen ' + game.fen());
+        stockfish.postMessage('go depth 12'); // Depth 12 offers accurate scoreboard readings
+    }
+
+    function triggerBotMove() {
+        if (game.game_over()) return;
+        isBotThinking = true;
+        botStatusEl.innerText = "Bot thinking...";
+        stockfish.postMessage('position fen ' + game.fen());
+        stockfish.postMessage('go depth 10');
+    }
+
+    // Update graphical scoreboard bar
+    function updateScoreboard(score) {
+        // Clamp score display between -5 and +5 for visual clarity
+        let displayScore = score.toFixed(2);
+        if (score > 0) displayScore = "+" + displayScore;
+        evalValue.innerText = displayScore;
+
+        // Convert value into percentages for the white fill status bar
+        let percentage = 50 + (score * 8); 
+        percentage = Math.max(5, Math.min(95, percentage)); // bound bar limits
+        evalBar.style.width = percentage + "%";
+    }
+
+    function onDrop(source, target) {
+        if (game.turn() === 'b' || game.game_over()) return 'snapback';
+        let move = game.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+        window.setTimeout(triggerBotMove, 400);
+    }
+
+    function onSnapEnd() { board.position(game.fen()); }
+
+    // Forced Opening Book system
+    function loadOpening(moveSequence) {
+        game.reset();
+        const moves = moveSequence.split(' ');
+        for (let i = 0; i < moves.length; i++) {
+            game.move(moves[i]);
+        }
+        board.position(game.fen());
+        
+        // Handle whose turn it naturally falls to next
+        if (game.turn() === 'b') {
+            triggerBotMove();
+        } else {
+            botStatusEl.innerText = "Your Turn";
+            calculatePositionAnalysis();
+        }
+    }
+
+    // Toggle Hide/Show Opening Book Panel
+    document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+        const sidebar = document.getElementById('openingsSidebar');
+        sidebar.classList.toggle('hidden');
+    });
+
+    const config = { draggable: true, position: 'start', onDrop: onDrop, onSnapEnd: onSnapEnd };
+    board = Chessboard('board', config);
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        game.reset();
+        board.start();
+        isBotThinking = false;
+        updateScoreboard(0);
+        botStatusEl.innerText = "Your Turn";
+        calculatePositionAnalysis();
+    });
+</script>
+
+</body>
+</html>
