@@ -1,143 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant JS Chess Arena</title>
+    <title>Simple AI Chess</title>
     <link rel="stylesheet" href="https://cloudflare.com">
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #121214; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .layout { display: flex; gap: 24px; align-items: flex-start; max-width: 1200px; width: 100%; }
-        .panel { background-color: #1e1e24; border: 1px solid #2d2d37; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); box-sizing: border-box; }
-        .openings-panel { width: 260px; }
-        .openings-panel.hidden { display: none; }
-        .openings-list { display: flex; flex-direction: column; gap: 8px; max-height: 440px; overflow-y: auto; margin-top: 15px; }
-        .opening-btn { background-color: #2a2b36; color: #cbd5e1; border: 1px solid #3f4052; padding: 10px 14px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 0.85rem; font-weight: 600; }
-        .opening-btn:hover { background-color: #383a49; color: #fff; }
-        .board-container { flex: 1.2; display: flex; flex-direction: column; align-items: center; }
-        #board { width: 480px; border: 6px solid #2d2d37; border-radius: 8px; box-shadow: 0 12px 36px rgba(0,0,0,0.6); }
-        .toggle-btn { background-color: #0f766e; color: white; border: none; margin-bottom: 18px; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; }
-        .sidebar { width: 300px; display: flex; flex-direction: column; gap: 20px; }
-        .eval-bar-bg { background: #2a2b36; height: 24px; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid #3f4052; margin-top: 12px; position: relative; }
-        .eval-bar-fill { background: #ffffff; height: 100%; width: 50%; transition: width 0.2s linear; }
-        .eval-text { text-align: center; font-weight: 700; font-size: 1.2rem; margin-top: 8px; }
-        .highlight-box { background-color: #141416; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 1.1rem; border-left: 5px solid #10b981; margin-top: 12px; }
-        #bot-status { border-left-color: #ef4444; color: #fca5a5; }
-        #advice-box { border-left-color: #3b82f6; color: #93c5fd; }
-        #resetBtn { background-color: #dc2626; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 700; }
-        h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid #2d2d37; padding-bottom: 8px; }
+        body { background: #161618; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #board { width: 450px; border: 4px solid #333; border-radius: 4px; }
     </style>
 </head>
 <body>
-<div class="layout">
-    <div class="panel openings-panel" id="openingsSidebar">
-        <h3>📖 Tactical Openings</h3>
-        <div class="openings-list">
-            <button class="opening-btn" onclick="loadOpening('e4 e5 Nf3 Nc6 Bb5')">Ruy Lopez</button>
-            <button class="opening-btn" onclick="loadOpening('e4 c5')">Sicilian Defense</button>
-            <button class="opening-btn" onclick="loadOpening('d4 d5 c4')">Queen's Gambit</button>
-            <button class="opening-btn" onclick="loadOpening('e4 e6 d4 d5')">French Defense</button>
-            <button class="opening-btn" onclick="loadOpening('e4 c6 d4 d5')">Caro-Kann Defense</button>
-        </div>
-    </div>
-    <div class="board-container">
-        <button class="toggle-btn" id="toggleSidebarBtn">↔ Toggle Openings</button>
-        <div id="board"></div>
-    </div>
-    <div class="sidebar">
-        <div class="panel">
-            <h3>📊 Live Scoreboard</h3>
-            <div class="eval-bar-bg"><div id="evalBar" class="eval-bar-fill"></div></div>
-            <div id="evalValue" class="eval-text">0.00</div>
-            <div id="bot-status" class="highlight-box">Ready</div>
-        </div>
-        <div class="panel">
-            <h3>💡 AI Cheat Sheet</h3>
-            <div id="advice-box" class="highlight-box">Your Turn</div>
-        </div>
-        <button id="resetBtn">Restart Match</button>
-    </div>
-</div>
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <div id="board"></div>
+
+<script src="https://jquery.com"></script>
 <script src="https://cloudflare.com"></script>
 <script src="https://cloudflare.com"></script>
 <script>
-    const game = new Chess(), pieceWeights = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+    const game = new Chess();
     let board = null;
-    const pawnEval = [[0,0,0,0,0,0,0,0],[5,5,5,5,5,5,5,5],[1,1,2,3,3,2,1,1],[0.5,0.5,1,2.5,2.5,1,0.5,0.5],[0,0,0,2,2,0,0,0],[0.5,-0.5,-1,0,0,-1,-0.5,0.5],[0.5,1,1,-2,-2,1,1,0.5],[0,0,0,0,0,0,0,0]];
-    const knightEval = [[-5,-4,-3,-3,-3,-3,-4,-5],[-4,-2,0,0,0,0,-2,-4],[-3,0,1,1.5,1.5,1,0,-3],[-3,0.5,1.5,2,2,1.5,0.5,-3],[-3,0,1.5,2,2,1.5,0,-3],[-3,0.5,1,1.5,1.5,1,0.5,-3],[-4,-2,0,0.5,0.5,0,-2,-4],[-5,-4,-3,-3,-3,-3,-4,-5]];
-    const bishopEval = [[-2,-1,-1,-1,-1,-1,-1,-2],[-1,0,0,0,0,0,0,-1],[-1,0,0.5,1,1,0.5,0,-1],[-1,0.5,0.5,1,1,0.5,0.5,-1],[-1,0,1,1.1,1.1,1,0,-1],[-1,1,1,1.1,1.1,1,1,-1],[-1,0.5,0,0,0,0,0.5,-1],[-2,-1,-1,-1,-1,-1,-1,-2]];
-    const rookEval = [[0,0,0,0.5,0.5,0,0,0],[0.5,1,1,1,1,1,1,0.5],[-0.5,0,0,0,0,0,0,-0.5],[-0.5,0,0,0,0,0,0,-0.5],[-0.5,0,0,0,0,0,0,-0.5],[-0.5,0,0,0,0,0,0,-0.5],[-0.5,0,0,0,0,0,0,-0.5],[0,0,0,0.5,0.5,0,0,0]];
-    const queenEval = [[-2,-1,-1,-0.5,-0.5,-1,-1,-2],[-1,0,0,0,0,0,0,-1],[-1,0,0.5,0.5,0.5,0.5,0,-1],[-0.5,0,0.5,0.5,0.5,0.5,0,-0.5],[0,0,0.5,0.5,0.5,0.5,0,-0.5],[-1,0.5,0.5,0.5,0.5,0.5,0,-1],[-1,0,0.5,0,0,0,0,-1],[-2,-1,-1,-0.5,-0.5,-1,-1,-2]];
-    const kingEval = [[-3,-4,-4,-5,-5,-4,-4,-3],[-3,-4,-4,-5,-5,-4,-4,-3],[-3,-4,-4,-5,-5,-4,-4,-3],[-3,-4,-4,-5,-5,-4,-4,-3],[-2,-3,-3,-4,-4,-3,-3,-2],[-1,-2,-2,-2,-2,-2,-2,-1],[2,2,0,0,0,0,2,2],[2,3,1,0,0,1,3,2]];
 
-    function getPieceValue(p, x, y) {
-        if (!p) return 0;
-        let val = pieceWeights[p.type], tx = (p.color === 'w') ? x : (7 - x);
-        switch (p.type) {
-            case 'p': return val + pawnEval[tx][y] * 10;
-            case 'n': return val + knightEval[tx][y] * 10;
-            case 'b': return val + bishopEval[tx][y] * 10;
-            case 'r': return val + rookEval[tx][y] * 10;
-            case 'q': return val + queenEval[tx][y] * 10;
-            case 'k': return val + kingEval[tx][y] * 10;
-        }
-    }
-    function evaluateBoard(b) {
-        let e = 0;
-        for (let i = 0; i < 8; i++)
-            for (let j = 0; j < 8; j++)
-                if (b[i][j]) e += (b[i][j].color === 'w') ? getPieceValue(b[i][j], i, j) : -getPieceValue(b[i][j], i, j);
-        return e;
-    }
-    function minimax(depth, isMax, alpha, beta) {
-        if (depth === 0) return [evaluateBoard(game.board()), null];
-        let m = game.moves({ verbose: true });
-        m.sort((a, b) => (b.captured ? pieceWeights[b.captured] : 0) - (a.captured ? pieceWeights[a.captured] : 0));
-        if (m.length === 0) return [game.in_check() ? (isMax ? -500000 : 500000) : 0, null];
-        let best = null;
-        if (isMax) {
-            let mx = -Infinity;
-            for (let move of m) {
-                game.move(move); let [ev, _] = minimax(depth - 1, false, alpha, beta); game.undo();
-                if (ev > mx) { mx = ev; best = move; } alpha = Math.max(alpha, ev); if (beta <= alpha) break;
-            } return [mx, best];
-        } else {
-            let mn = Infinity;
-            for (let move of m) {
-                game.move(move); let [ev, _] = minimax(depth - 1, true, alpha, beta); game.undo();
-                if (ev < mn) { mn = ev; best = move; } beta = Math.min(beta, ev); if (beta <= alpha) break;
-            } return [mn, best];
-        }
-    }
+    // Simple evaluation weights to let the bot make instant choices
+    const weights = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 };
+
     function makeBotMove() {
         if (game.game_over()) return;
-        document.getElementById('bot-status').innerText = "Thinking...";
-        setTimeout(() => {
-            let [score, best] = minimax(3, false, -Infinity, Infinity);
-            if (best) { game.move(best); board.position(game.fen()); }
-            document.getElementById('bot-status').innerText = "Your Move"; updateUI(score);
-        }, 30);
+        
+        let moves = game.moves({ verbose: true });
+        // Sort moves so the bot prefers to capture high value pieces
+        moves.sort((a, b) => {
+            let scoreA = a.captured ? weights[a.captured] : 0;
+            let scoreB = b.captured ? weights[b.captured] : 0;
+            return scoreB - scoreA;
+        });
+
+        // Play the highest priority strategic move instantly
+        if (moves.length > 0) {
+            game.move(moves[0]);
+            board.position(game.fen());
+        }
     }
-    function updateUI(scoreVal) {
-        let score = Math.max(-12, Math.min(12, scoreVal / 100)), display = (score > 0 ? "+" : "") + score.toFixed(2);
-        document.getElementById('evalValue').innerText = display;
-        document.getElementById('evalBar').style.width = (50 + (score * 4.16)) + "%";
-        let [_, pBest] = minimax(3, true, -Infinity, Infinity);
-        document.getElementById('advice-box').innerText = pBest ? pBest.san.toUpperCase() : "---";
-    }
-    function onDrop(s, t) {
+
+    function onDrop(source, target) {
         if (game.turn() === 'b' || game.game_over()) return 'snapback';
-        if (game.move({ from: s, to: t, promotion: 'q' }) === null) return 'snapback';
-        makeBotMove();
+        
+        let move = game.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+
+        // Bot responds immediately right after your piece drops
+        window.setTimeout(makeBotMove, 200);
     }
-    function loadOpening(seq) {
-        game.reset(); seq.split(' ').forEach(m => game.move(m)); board.position(game.fen());
-        if (game.turn() === 'b') makeBotMove(); else { let [s, _] = minimax(3, true, -Infinity, Infinity); updateUI(s); }
-    }
-    document.getElementById('toggleSidebarBtn').addEventListener('click', () => document.getElementById('openingsSidebar').classList.toggle('hidden'));
-    board = Chessboard('board', { draggable: true, position: 'start', onDrop: onDrop, onSnapEnd: () => board.position(game.fen()), pieceTheme: 'https://chessboardjs.com{piece}.png' });
-    document.getElementById('resetBtn').addEventListener('click', () => { game.reset(); board.start(); document.getElementById('evalValue').innerText = "0.00"; document.getElementById('evalBar').style.width = "50%"; });
+
+    board = Chessboard('board', {
+        draggable: true,
+        position: 'start',
+        onDrop: onDrop,
+        onSnapEnd: () => board.position(game.fen()),
+        pieceTheme: 'https://chessboardjs.com{piece}.png'
+    });
 </script>
 </body>
 </html>
