@@ -3,347 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chess Arena & Openings Trainer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <title>Grandmaster AI Chess Sandbox & Analytical Arena</title>
+    <link rel="stylesheet" href="https://cloudflare.com">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1e;
-            color: #fff;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #121214;
+            color: #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
-            overflow-x: hidden;
+            box-sizing: border-box;
         }
         .layout {
             display: flex;
-            gap: 20px;
+            gap: 24px;
             align-items: flex-start;
-            max-width: 1200px;
+            max-width: 1300px;
             width: 100%;
-            position: relative;
         }
-        /* Openings Sidebar Styling */
-        .openings-panel {
-            width: 250px;
-            background-color: #24242d;
+        .panel-container {
+            background-color: #1e1e24;
+            border: 1px solid #2d2d37;
+            border-radius: 12px;
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #33333f;
-            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            box-sizing: border-box;
         }
-        .openings-panel.hidden {
-            display: none;
+        .openings-panel {
+            width: 280px;
+            transition: all 0.2s ease-in-out;
         }
+        .openings-panel.hidden { display: none; }
         .openings-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 400px;
+            gap: 10px;
+            max-height: 480px;
             overflow-y: auto;
-            margin-top: 10px;
+            margin-top: 15px;
             padding-right: 5px;
         }
         .opening-btn {
-            background-color: #2c3e50;
-            text-align: left;
-            font-size: 0.85rem;
-            padding: 8px 12px;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            background-color: #2a2b36;
+            color: #cbd5e1;
+            border: 1px solid #3f4052;
+            padding: 10px 14px;
+            border-radius: 6px;
             cursor: pointer;
+            text-align: left;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
         }
-        .opening-btn:hover { background-color: #34495e; }
-        
-        /* Main Board Styling */
+        .opening-btn:hover {
+            background-color: #383a49;
+            color: #fff;
+            border-color: #52546a;
+        }
         .board-container {
-            flex: 1;
-            text-align: center;
+            flex: 1.2;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         #board {
-            width: 450px;
-            border: 5px solid #2d2d35;
-            border-radius: 6px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 500px;
+            border: 6px solid #2d2d37;
+            border-radius: 8px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.6);
         }
         .toggle-btn {
-            background-color: #16a085;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            padding: 6px 12px;
-            width: auto;
-            border-radius: 20px;
+            background-color: #0f766e;
             color: white;
             border: none;
+            margin-bottom: 18px;
+            padding: 10px 20px;
+            border-radius: 30px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 0.92rem;
+            box-shadow: 0 4px 12px rgba(15,118,110,0.3);
+            transition: background 0.15s;
         }
-        .toggle-btn:hover { background-color: #1abc9c; }
-
-        /* Right Sidebar & Scoreboard */
+        .toggle-btn:hover { background-color: #115e59; }
         .sidebar {
-            width: 300px;
+            width: 320px;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
-        .panel {
-            background-color: #24242d;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #33333f;
-        }
-        h2, h3 { margin-top: 0; color: #f0f0f5; }
-        
-        /* Scoreboard Visual Component */
-        .scoreboard-container {
-            margin: 15px 0;
-        }
         .eval-bar-bg {
-            background: #333;
-            height: 24px;
+            background: #2a2b36;
+            height: 26px;
             width: 100%;
-            border-radius: 12px;
+            border-radius: 13px;
             overflow: hidden;
+            border: 1px solid #3f4052;
+            margin-top: 12px;
             position: relative;
-            border: 1px solid #555;
         }
         .eval-bar-fill {
-            background: #fff;
+            background: #ffffff;
             height: 100%;
-            width: 50%; /* Starts perfectly even */
-            transition: width 0.4s ease;
+            width: 50%;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .eval-text {
             text-align: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-top: 5px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-top: 8px;
+            color: #f1f5f9;
         }
-
         .highlight-box {
-            background-color: #1e1e24;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 1.1rem;
-            border-left: 4px solid #4caf50;
+            background-color: #141416;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1.15rem;
+            border-left: 5px solid #10b981;
+            margin-top: 12px;
         }
-        #bot-status { border-left-color: #e74c3c; color: #ff6b6b; }
-        #advice-box { border-left-color: #3498db; color: #5dade2; }
-        
-        button {
+        #bot-status { border-left-color: #ef4444; color: #fca5a5; }
+        #advice-box { border-left-color: #3b82f6; color: #93c5fd; }
+        .meta-stats {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+        #resetBtn {
+            background-color: #dc2626;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
-            font-weight: bold;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: background 0.15s;
         }
-        #resetBtn { background-color: #c0392b; margin-top: 10px; }
-        #resetBtn:hover { background-color: #d94333; }
+        #resetBtn:hover { background-color: #b91c1c; }
+        h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #f8fafc; border-bottom: 1px solid #2d2d37; padding-bottom: 8px; }
     </style>
 </head>
 <body>
 
 <div class="layout">
-    <!-- LEFT SIDE: Hideable Openings Library -->
-    <div class="openings-panel" id="openingsSidebar">
-        <h3>📖 Opening Playbook</h3>
-        <p style="font-size: 0.8rem; color: #aaa; margin: 0;">Clicking an opening resets the board and forces the initial moves.</p>
+    <div class="panel-container openings-panel" id="openingsSidebar">
+        <h3>📖 Strategic Openings</h3>
         <div class="openings-list">
-            <button class="opening-btn" onclick="loadOpening('e4 e5 Nf3 Nc6 Bb5')">Ruy Lopez</button>
-            <button class="opening-btn" onclick="loadOpening('e4 c5')">Sicilian Defense</button>
-            <button class="opening-btn" onclick="loadOpening('d4 d5 c4')">Queen's Gambit</button>
-            <button class="opening-btn" onclick="loadOpening('e4 e6')">French Defense</button>
-            <button class="opening-btn" onclick="loadOpening('d4 Nf6 c4 e6 Nf3 b6')">Queen's Indian Defense</button>
-            <button class="opening-btn" onclick="loadOpening('e4 c6')">Caro-Kann Defense</button>
+            <button class="opening-btn" onclick="loadOpening('e4 e5 Nf3 Nc6 Bb5')">Ruy Lopez (Spanish)</button>
+            <button class="opening-btn" onclick="loadOpening('e4 c5')">Sicilian Defense (Open)</button>
+            <button class="opening-btn" onclick="loadOpening('d4 d5 c4')">Queen's Gambit Accepted</button>
+            <button class="opening-btn" onclick="loadOpening('e4 e6 d4 d5')">French Defense (Classical)</button>
+            <button class="opening-btn" onclick="loadOpening('e4 c6 d4 d5')">Caro-Kann Defense</button>
             <button class="opening-btn" onclick="loadOpening('d4 Nf6 c4 g6 Nc3 Bg7')">King's Indian Defense</button>
-            <button class="opening-btn" onclick="loadOpening('f4')">Bird's Opening</button>
+            <button class="opening-btn" onclick="loadOpening('d4 Nf6 c4 e6 Nf3 b6')">Queen's Indian Defense</button>
         </div>
     </div>
 
-    <!-- CENTER: Main Match Arena -->
     <div class="board-container">
-        <button class="toggle-btn" id="toggleSidebarBtn">↔ Toggle Openings Menu</button>
+        <button class="toggle-btn" id="toggleSidebarBtn">↔ Toggle Strategic Openings</button>
         <div id="board"></div>
     </div>
 
-    <!-- RIGHT SIDE: Real-Time Scoreboard & AI Panel -->
     <div class="sidebar">
-        <div class="panel">
-            <h3>📊 Real-Time Scoreboard</h3>
-            <div class="scoreboard-container">
-                <div class="eval-bar-bg">
-                    <div id="evalBar" class="eval-bar-fill"></div>
-                </div>
-                <div id="evalValue" class="eval-text">0.00</div>
+        <div class="panel-container">
+            <h3>📊 Live Performance Engine</h3>
+            <div class="eval-bar-bg"><div id="evalBar" class="eval-bar-fill"></div></div>
+            <div id="evalValue" class="eval-text">0.00</div>
+            <div class="meta-stats">
+                <span id="nodesCount">Calculations: 0 positions</span>
+                <span id="searchDepth">Depth: Level 3</span>
             </div>
-            <div id="bot-status" class="highlight-box">Loading Engine...</div>
+            <div id="bot-status" class="highlight-box">System Active</div>
         </div>
 
-        <div class="panel">
-            <h3>💡 AI Cheat Sheet</h3>
-            <div id="advice-box" class="highlight-box">Thinking...</div>
+        <div class="panel-container">
+            <h3>💡 real-time cheat sheet</h3>
+            <div id="advice-box" class="highlight-box">Waiting for Move</div>
         </div>
-
-        <div class="panel">
-            <button id="resetBtn">Restart Match</button>
-        </div>
+        <button id="resetBtn">Restart Active Simulation</button>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script src="https://jquery.com"></script>
+<script src="https://cloudflare.com"></script>
+<script src="https://cloudflare.com"></script>
 
 <script>
     const game = new Chess();
     let board = null;
-    
-    const stockfish = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
-    
-    const botStatusEl = document.getElementById('bot-status');
-    const adviceBoxEl = document.getElementById('advice-box');
-    const evalBar = document.getElementById('evalBar');
-    const evalValue = document.getElementById('evalValue');
-    
-    let isBotThinking = false;
+    let nodeCounter = 0;
 
-    stockfish.postMessage('uci');
+    const pieceWeights = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
 
-    stockfish.onmessage = function(event) {
-        const line = event.data;
+    const pawnEval = [
+        [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+        [5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0],
+        [1.0,  1.0,  2.0,  3.0,  3.0,  2.0,  1.0,  1.0],
+        [0.5,  0.5,  1.0,  2.5,  2.5,  1.0,  0.5,  0.5],
+        [0.0,  0.0,  0.0,  2.0,  2.0,  0.0,  0.0,  0.0],
+        [0.5, -0.5, -1.0,  0.0,  0.0, -1.0, -0.5,  0.5],
+        [0.5,  1.0, 1.0,  -2.0, -2.0,  1.0,  1.0,  0.5],
+        [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0]
+    ];
+    const knightEval = [
+        [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0],
+        [-4.0, -2.0,  0.0,  0.0,  0.0,  0.0, -2.0, -4.0],
+        [-3.0,  0.0,  1.0,  1.5,  1.5,  1.0,  0.0, -3.0],
+        [-3.0,  0.5,  1.5,  2.0,  2.0,  1.5,  0.5, -3.0],
+        [-3.0,  0.0,  1.5,  2.0,  2.0,  1.5,  0.0, -3.0],
+        [-3.0,  0.5,  1.0,  1.5,  1.5,  1.0,  0.5, -3.0],
+        [-4.0, -2.0,  0.0,  0.5,  0.5,  0.0, -2.0, -4.0],
+        [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
+    ];
 
-        if (line === 'uciok') {
-            botStatusEl.innerText = "Ready! Make a move.";
-            calculatePositionAnalysis();
+    const bishopEval = [
+        [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0],
+        [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0],
+        [-1.0,  0.0,  0.5,  1.0,  1.0,  0.5,  0.0, -1.0],
+        [-1.0,  0.5,  0.5,  1.0,  1.0,  0.5,  0.5, -1.0],
+        [-1.0,  0.0,  1.0,  1.0,  1.0,  1.0,  0.0, -1.0],
+        [-1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0, -1.0],
+        [-1.0,  0.5,  0.0,  0.0,  0.0,  0.0,  0.5, -1.0],
+        [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0]
+    ];
+
+    const rookEval = [
+        [0.0,  0.0,  0.0,  0.5,  0.5,  0.0,  0.0,  0.0],
+        [0.5,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  0.5],
+        [-0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+        [-0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+        [-0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+        [-0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+        [-0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+        [0.0,   0.0,  0.0,  0.5,  0.5,  0.0,  0.0,  0.0]
+    ];
+
+    const queenEval = [
+        [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0],
+        [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0],
+        [-1.0,  0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -1.0],
+        [-0.5,  0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -0.5],
+        [0.0,   0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -0.5],
+        [-1.0,  0.5,  0.5,  0.5,  0.5,  0.5,  0.0, -1.0],
+        [-1.0,  0.0,  0.5,  0.0,  0.0,  0.0,  0.0, -1.0],
+        [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0]
+    ];
+
+    const kingEval = [
+        [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+        [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+        [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+        [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+        [-2.0, -3.0, -3.0, -4.0, -4.0, -3.0, -3.0, -2.0],
+        [-1.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -1.0],
+        [2.0,  2.0,  0.0,  0.0,  0.0,  0.0,  2.0,  2.0],
+        [2.0,  3.0,  1.0,  0.0,  0.0,  1.0,  3.0,  2.0]
+    ];
+
+    function getPieceValue(piece, x, y) {
+        if (piece === null) return 0;
+        let val = pieceWeights[piece.type];
+        let tableX = (piece.color === 'w') ? x : (7 - x);
+        let tableY = y;
+        let positionBonus = 0;
+        switch (piece.type) {
+            case 'p': positionBonus = pawnEval[tableX][tableY]; break;
+            case 'n': positionBonus = knightEval[tableX][tableY]; break;
+            case 'b': positionBonus = bishopEval[tableX][tableY]; break;
+            case 'r': positionBonus = rookEval[tableX][tableY]; break;
+            case 'q': positionBonus = queenEval[tableX][tableY]; break;
+            case 'k': positionBonus = kingEval[tableX][tableY]; break;
         }
-
-        // Parse Engine Evaluation scores
-        if (line.includes('score cp')) {
-            const parts = line.split(' ');
-            const scoreIndex = parts.indexOf('cp');
-            if (scoreIndex !== -1) {
-                let cp = parseInt(parts[scoreIndex + 1]);
-                // If it's Black's turn to calculate, inverse score for consistency
-                if (game.turn() === 'b') cp = -cp; 
-                updateScoreboard(cp / 100);
-            }
-        } else if (line.includes('score mate')) {
-            const parts = line.split(' ');
-            const mateIndex = parts.indexOf('mate');
-            if (mateIndex !== -1) {
-                const movesToMate = parts[mateIndex + 1];
-                evalValue.innerText = "M" + movesToMate;
-                evalBar.style.width = movesToMate > 0 ? "100%" : "0%";
-            }
-        }
-
-        if (line.startsWith('bestmove')) {
-            const parts = line.split(' ');
-            const move = parts;
-
-            if (isBotThinking) {
-                game.move({
-                    from: move.substring(0, 2),
-                    to: move.substring(2, 4),
-                    promotion: move.length > 4 ? move.substring(4, 5) : undefined
-                });
-                board.position(game.fen());
-                isBotThinking = false;
-                botStatusEl.innerText = "Your Turn";
-                calculatePositionAnalysis();
-            } else {
-                adviceBoxEl.innerText = move.toUpperCase();
-            }
-        }
-    };
-
-    // Calculate both Score and Player Advice simultaneously
-    function calculatePositionAnalysis() {
-        if (game.game_over()) {
-            botStatusEl.innerText = "Game Over!";
-            return;
-        }
-        isBotThinking = false;
-        stockfish.postMessage('position fen ' + game.fen());
-        stockfish.postMessage('go depth 12'); // Depth 12 offers accurate scoreboard readings
+        return val + (positionBonus * 10);
     }
 
-    function triggerBotMove() {
-        if (game.game_over()) return;
-        isBotThinking = true;
-        botStatusEl.innerText = "Bot thinking...";
-        stockfish.postMessage('position fen ' + game.fen());
-        stockfish.postMessage('go depth 10');
+    function evaluateBoard(boardState) {
+        let totalEvaluation = 0;
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const piece = boardState[i][j];
+                if (piece) {
+                    const val = getPieceValue(piece, i, j);
+                    totalEvaluation += (piece.color === 'w') ? val : -val;
+                }
+            }
+        }
+        return totalEvaluation;
     }
 
-    // Update graphical scoreboard bar
-    function updateScoreboard(score) {
-        // Clamp score display between -5 and +5 for visual clarity
+    function minimax(depth, isMaximizing, alpha, beta) {
+        nodeCounter++;
+        if (depth === 0) return [evaluateBoard(game.board()), null];
+        let moves = game.moves({ verbose: true });
+        moves.sort((a, b) => {
+            let scoreA = a.captured ? pieceWeights[a.captured] : 0;
+            let scoreB = b.captured ? pieceWeights[b.captured] : 0;
+            return scoreB - scoreA;
+        });
+        if (moves.length === 0) {
+            if (game.in_check()) {
+                return [isMaximizing ? -500000 + (3 - depth) : 500000 - (3 - depth), null];
+            }
+            return [0, null];
+        }
+        let bestMove = null;
+        if (isMaximizing) {
+            let maxEval = -Infinity;
+            for (let move of moves) {
+                game.move(move);
+                let [evaluation, _] = minimax(depth - 1, false, alpha, beta);
+                game.undo();
+                if (evaluation > maxEval) { maxEval = evaluation; bestMove = move; }
+                alpha = Math.max(alpha, evaluation);
+                if (beta <= alpha) break;
+            }
+            return [maxEval, bestMove];
+        } else {
+            let minEval = Infinity;
+            for (let move of moves) {
+                game.move(move);
+                let [evaluation, _] = minimax(depth - 1, true, alpha, beta);
+                game.undo();
+                if (evaluation < minEval) { minEval = evaluation; bestMove = move; }
+                beta = Math.min(beta, evaluation);
+                if (beta <= alpha) break;
+            }
+            return [minEval, bestMove];
+        }
+    }
+
+    function makeBotMove() {
+        if (game.game_over()) { handleGameOver(); return; }
+        document.getElementById('bot-status').innerText = "Calculating Stratagem...";
+        nodeCounter = 0;
+        setTimeout(() => {
+            let [score, bestMove] = minimax(3, false, -Infinity, Infinity);
+            if (bestMove) { game.move(bestMove); board.position(game.fen()); }
+            document.getElementById('nodesCount').innerText = `Calculations: ${nodeCounter} positions`;
+            document.getElementById('bot-status').innerText = "Your Move";
+            updateUI(score);
+            if (game.game_over()) handleGameOver();
+        }, 30);
+    }
+
+    function updateUI(scoreVal) {
+        let score = (scoreVal / 100);
+        if (score > 12) score = 12;
+        if (score < -12) score = -12;
         let displayScore = score.toFixed(2);
         if (score > 0) displayScore = "+" + displayScore;
-        evalValue.innerText = displayScore;
+        document.getElementById('evalValue').innerText = displayScore;
+        let percentage = 50 + (score * 4.16); 
+        percentage = Math.max(5, Math.min(95, percentage));
+        document.getElementById('evalBar').style.width = percentage + "%";
+        let [_, playerBestMove] = minimax(3, true, -Infinity, Infinity);
+        document.getElementById('advice-box').innerText = playerBestMove ? playerBestMove.san.toUpperCase() : "CHECKMATE EXPECTED";
+    }
 
-        // Convert value into percentages for the white fill status bar
-        let percentage = 50 + (score * 8); 
-        percentage = Math.max(5, Math.min(95, percentage)); // bound bar limits
-        evalBar.style.width = percentage + "%";
+    function handleGameOver() {
+        if (game.in_checkmate()) document.getElementById('bot-status').innerText = "Terminated: Checkmate";
+        else if (game.in_draw()) document.getElementById('bot-status').innerText = "Terminated: Draw";
     }
 
     function onDrop(source, target) {
         if (game.turn() === 'b' || game.game_over()) return 'snapback';
         let move = game.move({ from: source, to: target, promotion: 'q' });
         if (move === null) return 'snapback';
-        window.setTimeout(triggerBotMove, 400);
+        makeBotMove();
     }
 
-    function onSnapEnd() { board.position(game.fen()); }
-
-    // Forced Opening Book system
     function loadOpening(moveSequence) {
         game.reset();
-        const moves = moveSequence.split(' ');
-        for (let i = 0; i < moves.length; i++) {
-            game.move(moves[i]);
-        }
+        moveSequence.split(' ').forEach(m => game.move(m));
         board.position(game.fen());
-        
-        // Handle whose turn it naturally falls to next
+        nodeCounter = 0;
         if (game.turn() === 'b') {
-            triggerBotMove();
+            makeBotMove();
         } else {
-            botStatusEl.innerText = "Your Turn";
-            calculatePositionAnalysis();
+            document.getElementById('bot-status').innerText = "Your Move";
+            let [score, _] = minimax(3, true, -Infinity, Infinity);
+            updateUI(score);
         }
     }
 
-    // Toggle Hide/Show Opening Book Panel
     document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
-        const sidebar = document.getElementById('openingsSidebar');
-        sidebar.classList.toggle('hidden');
+        document.getElementById('openingsSidebar').classList.toggle('hidden');
     });
 
-    const config = { draggable: true, position: 'start', onDrop: onDrop, onSnapEnd: onSnapEnd };
-    board = Chessboard('board', config);
+    board = Chessboard('board', {
+        draggable: true,
+        position: 'start',
+        onDrop: onDrop,
+        onSnapEnd: () => board.position(game.fen()),
+        pieceTheme: 'https://chessboardjs.com{piece}.png'
+    });
 
     document.getElementById('resetBtn').addEventListener('click', () => {
         game.reset();
         board.start();
-        isBotThinking = false;
-        updateScoreboard(0);
-        botStatusEl.innerText = "Your Turn";
-        calculatePositionAnalysis();
+        document.getElementById('evalValue').innerText = "0.00";
+        document.getElementById('evalBar').style.width = "50%";
+        document.getElementById('nodesCount').innerText = "Calculations: 0 positions";
+        document.getElementById('bot-status').innerText = "System Active";
+        document.getElementById('advice-box').innerText = "Waiting for Move";
     });
 </script>
-
 </body>
 </html>
